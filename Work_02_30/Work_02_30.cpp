@@ -14,6 +14,7 @@ struct Notebook_size // габаритные размеры
 	double z;
 };
 
+
 struct NOTEBOOK
 {
 	char model[21]; // наименование 
@@ -22,7 +23,11 @@ struct NOTEBOOK
 	int price;  // цена 
 };
 
-char* currentfilename = "note.dat";
+/* имя текстового файла */
+char* infilename = "note.txt";
+
+/* имя бинарного файла */
+char* outfilename = "note.dat";
 
 /*	Добавить запись в бинарный файл */
 void addrecord(NOTEBOOK);
@@ -52,7 +57,7 @@ void main()
 
 	bool bmenu = true;
 
-	while (bmenu)
+	while (bmenu) // пока true
 	{
 		int input_number = 0;
 
@@ -106,7 +111,6 @@ void main()
 
 	}
 
-
 	puts("Нажмите любую клавишу для выхода...");
 	_getch();
 }
@@ -117,10 +121,10 @@ void create_file(char* filename)
 	FILE* bfile;
 	short count = 0;
 	
-	fopen_s(&bfile,filename, "rb");
-	if (bfile == NULL) 
+	fopen_s(&bfile,filename, "rb"); // открываем для чтения бинарный файл
+	if (bfile == NULL)
 	{
-		printf("Файл не найден. Попытка создания файла...\n");
+		//printf("Файл не найден. Попытка создания файла...\n");
 		
 		fopen_s(&bfile,filename, "wb");
 		if (bfile == NULL) 
@@ -141,7 +145,7 @@ void save_data(NOTEBOOK* notebooks, short count)
 {
 	FILE* file;
 
-	fopen_s(&file, currentfilename, "w+b");
+	fopen_s(&file, outfilename, "w+b");
 	if (!file)
 	{
 		puts("Невозможно создать файл");
@@ -162,7 +166,7 @@ void addrecord(NOTEBOOK Notebook)
 {
 	FILE* file;
 
-	fopen_s(&file, currentfilename, "r+b");
+	fopen_s(&file, outfilename, "r+b");
 	if (!file)
 	{
 		puts("Невозможно открыть файл");
@@ -177,7 +181,7 @@ void addrecord(NOTEBOOK Notebook)
 	
 	//printf("count = %d\n", count);
 
-	fopen_s(&file, currentfilename, "a+b");
+	fopen_s(&file, outfilename, "a+b");
 	if (!file)
 	{
 		puts("Невозможно создать файл");
@@ -188,7 +192,7 @@ void addrecord(NOTEBOOK Notebook)
 
 	fclose(file);
 
-	fopen_s(&file, currentfilename, "rb+");
+	fopen_s(&file, outfilename, "rb+");
 	if (!file)
 	{
 		puts("Невозможно создать файл");
@@ -206,7 +210,7 @@ void get_data()
 {
 	FILE* file;
 
-	fopen_s(&file, "note.txt", "r");
+	fopen_s(&file, infilename, "r");
 	if (!file)
 	{
 		puts("Невозможно прочитать файл");
@@ -231,18 +235,26 @@ void get_data()
 			*(frequency_m + i) = *(Mainstr + 43 + i);
 		}
 
+		// Частота ноутбука
 		int frequency = atoi(frequency_m);
 
-		if (frequency > 120)
+		if (frequency > 120) // Выполняем если частота больше 120
 		{
 
+			// Модель ноубука
+			
 			char* model_m = (char*)calloc(30, sizeof(char));
+
 			for (int i = 0; i < 19; i++)
 			{
 				*(model_m + i) = *(Mainstr + i);
 			}
 
+
 			strcpy_s(notebok.model, model_m);
+
+
+			// Размеры ноубука
 
 			char* size_m = (char*)calloc(50, sizeof(char));
 
@@ -252,9 +264,11 @@ void get_data()
 			}
 
 			char* contex1;
-			char * pch = strtok_s(size_m, "x", &contex1);
+			
 			double* size_notebook = (double*)calloc(3, sizeof(double));
-
+			
+			char * pch = strtok_s(size_m, "x", &contex1);
+			
 			int count_size = 0;
 
 			while (pch != NULL)   // пока есть лексемы
@@ -264,9 +278,15 @@ void get_data()
 				count_size++;
 			}
 
+			// Размер X
 			notebok.size.х = *(size_notebook);
+			// Размер Y
 			notebok.size.y = *(size_notebook + 1);
+			// Размер Z
 			notebok.size.z = *(size_notebook + 2);
+
+
+			// Цена ноутбука
 
 			char* price_m = (char*)calloc(5, sizeof(char));
 
@@ -277,6 +297,8 @@ void get_data()
 
 			notebok.price = atoi(price_m);
 
+			// Вес ноутбука
+
 			char* weight_m = (char*)calloc(5, sizeof(char));
 
 			for (int i = 0; i < 3; i++)
@@ -286,20 +308,17 @@ void get_data()
 
 			notebok.w = atof(weight_m);
 
+			
+			*(notebooks + notebook_counts) = notebok; // добавляем в массив структуру
 
-			*(notebooks + notebook_counts) = notebok;
-
-			notebook_counts++;
+			notebook_counts++; // добавлем счетчик ноутбуков
 		}
 	}
 
 	fclose(file);
 
 
-	create_file(currentfilename); 
-
-
-	//sort_data(notebooks, notebook_counts);
+	create_file(outfilename); 
 
 	for (int i = 0; i < notebook_counts; i++)
 	{
@@ -334,24 +353,28 @@ void get_data_binary(NOTEBOOK* notebooks, short* count)
 	NOTEBOOK notebook;
 
 	FILE   *in;
-	fopen_s(&in, currentfilename, "rb+");
+	fopen_s(&in, outfilename, "rb+");
 	if (!in)
 	{
 		printf("Ошибка открытия файла\n");
 	}
 	
+	// Чтение первых 2-х байтов
+
 	fread(count, sizeof(short int), 1, in);
 
-	printf("%d", *count);
+	//printf("%d", *count);
 
+	// Чтение структур данных
 	
 	int num = 0;
+	
 	while (fread(&notebook, sizeof(NOTEBOOK), 1, in))
 	{
 		if (feof(in)) printf("Ошибка чтения");
 
 		notebooks[num] = notebook;
-		num++;
+		num++; // счетчик количества записей
 	}
 
 	fclose(in);
